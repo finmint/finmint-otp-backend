@@ -39,16 +39,19 @@ app.post('/send-otp', async (req, res) => {
 // ✅ Verify OTP
 app.post('/verify-otp', async (req, res) => {
   const { mobile, code } = req.body;
-
   try {
     const verificationCheck = await client.verify.v2
-      .services(verifyServiceSid)
+      .services(process.env.TWILIO_VERIFY_SID)
       .verificationChecks.create({ to: `+91${mobile}`, code });
 
-    res.status(200).json({ status: verificationCheck.status });
+    if (verificationCheck.status === "approved") {
+      res.status(200).json({ status: "approved" });
+    } else {
+      res.status(400).json({ status: "failed", message: "Invalid OTP" });
+    }
   } catch (err) {
-    console.error('Verify OTP Error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error("Verification failed:", err); // 👈 this line helps debug
+    res.status(500).json({ error: err.message || "Verification error" });
   }
 });
 
